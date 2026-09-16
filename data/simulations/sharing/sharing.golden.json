@@ -1,0 +1,1291 @@
+{
+  "$comment": "Golden cases for lib/simulations/sharing simulate(input, ruleSet): input -> expected result. Hand-reviewed; regenerate only with UPDATE_GOLDENS=1 npx vitest run data/simulations/sharing and review the diff.",
+  "cases": [
+    {
+      "name": "standard object, hierarchy toggle off is forced on: a VP above the owner reads a Private Account",
+      "ruleSetId": "sharing@summer-26",
+      "input": {
+        "object": {
+          "owd": "Private",
+          "custom": false,
+          "grantAccessUsingHierarchies": false
+        },
+        "roles": [
+          {
+            "id": "ceo"
+          },
+          {
+            "id": "vp",
+            "parentId": "ceo"
+          },
+          {
+            "id": "rep",
+            "parentId": "vp"
+          }
+        ],
+        "users": [
+          {
+            "id": "owner",
+            "roleId": "rep",
+            "profile": {
+              "read": true,
+              "edit": true,
+              "delete": true,
+              "viewAll": false,
+              "modifyAll": false,
+              "viewAllData": false,
+              "modifyAllData": false
+            },
+            "permissionSets": []
+          },
+          {
+            "id": "manager",
+            "roleId": "vp",
+            "profile": {
+              "read": true,
+              "edit": true,
+              "delete": true,
+              "viewAll": false,
+              "modifyAll": false,
+              "viewAllData": false,
+              "modifyAllData": false
+            },
+            "permissionSets": []
+          }
+        ],
+        "record": {
+          "id": "acc-1",
+          "ownerId": "owner",
+          "fields": {
+            "Industry": "Energy"
+          }
+        },
+        "sharingRules": [],
+        "manualShares": [],
+        "question": {
+          "userId": "manager",
+          "wants": "read"
+        }
+      },
+      "expected": {
+        "access": "full",
+        "granted": true,
+        "trace": [
+          {
+            "rule": "object_permissions",
+            "effect": "gate",
+            "access": "full",
+            "note": "Read: profile; Edit: profile; Delete: profile. Object permissions cap record-level access at full."
+          },
+          {
+            "rule": "modify_all",
+            "effect": "none",
+            "note": "No Modify All Data or Modify All Records: sharing decides."
+          },
+          {
+            "rule": "view_all",
+            "effect": "none",
+            "note": "No View All Data or View All Records: sharing decides."
+          },
+          {
+            "rule": "owner",
+            "effect": "none",
+            "note": "Record is owned by 'owner', not 'manager'."
+          },
+          {
+            "rule": "owd",
+            "effect": "none",
+            "note": "OWD Private: no baseline; only ownership, the role hierarchy, sharing rules and shares open the record."
+          },
+          {
+            "rule": "role_hierarchy",
+            "effect": "grant",
+            "access": "full",
+            "note": "Grant Access Using Hierarchies is always on for standard objects; the toggle (off) is ignored. Role 'vp' is above the owner's role 'rep': the hierarchy grants owner-level access (full)."
+          },
+          {
+            "rule": "manual_share",
+            "effect": "none",
+            "note": "No manual share for user 'manager'."
+          },
+          {
+            "rule": "required_access",
+            "effect": "gate",
+            "access": "read",
+            "note": "Wants read: needs read. Record-level access is full: granted."
+          }
+        ]
+      }
+    },
+    {
+      "name": "custom object, hierarchy toggle off: the VP above the owner gets nothing on a Private object",
+      "ruleSetId": "sharing@summer-26",
+      "input": {
+        "object": {
+          "owd": "Private",
+          "custom": true,
+          "grantAccessUsingHierarchies": false
+        },
+        "roles": [
+          {
+            "id": "ceo"
+          },
+          {
+            "id": "vp",
+            "parentId": "ceo"
+          },
+          {
+            "id": "rep",
+            "parentId": "vp"
+          }
+        ],
+        "users": [
+          {
+            "id": "owner",
+            "roleId": "rep",
+            "profile": {
+              "read": true,
+              "edit": true,
+              "delete": true,
+              "viewAll": false,
+              "modifyAll": false,
+              "viewAllData": false,
+              "modifyAllData": false
+            },
+            "permissionSets": []
+          },
+          {
+            "id": "manager",
+            "roleId": "vp",
+            "profile": {
+              "read": true,
+              "edit": true,
+              "delete": true,
+              "viewAll": false,
+              "modifyAll": false,
+              "viewAllData": false,
+              "modifyAllData": false
+            },
+            "permissionSets": []
+          }
+        ],
+        "record": {
+          "id": "proj-1",
+          "ownerId": "owner",
+          "fields": {
+            "Status__c": "Active"
+          }
+        },
+        "sharingRules": [],
+        "manualShares": [],
+        "question": {
+          "userId": "manager",
+          "wants": "read"
+        }
+      },
+      "expected": {
+        "access": "none",
+        "granted": false,
+        "trace": [
+          {
+            "rule": "object_permissions",
+            "effect": "gate",
+            "access": "full",
+            "note": "Read: profile; Edit: profile; Delete: profile. Object permissions cap record-level access at full."
+          },
+          {
+            "rule": "modify_all",
+            "effect": "none",
+            "note": "No Modify All Data or Modify All Records: sharing decides."
+          },
+          {
+            "rule": "view_all",
+            "effect": "none",
+            "note": "No View All Data or View All Records: sharing decides."
+          },
+          {
+            "rule": "owner",
+            "effect": "none",
+            "note": "Record is owned by 'owner', not 'manager'."
+          },
+          {
+            "rule": "owd",
+            "effect": "none",
+            "note": "OWD Private: no baseline; only ownership, the role hierarchy, sharing rules and shares open the record."
+          },
+          {
+            "rule": "role_hierarchy",
+            "effect": "none",
+            "note": "Grant Access Using Hierarchies is off for this custom object: roles above the owner get nothing from the hierarchy."
+          },
+          {
+            "rule": "manual_share",
+            "effect": "none",
+            "note": "No manual share for user 'manager'."
+          },
+          {
+            "rule": "required_access",
+            "effect": "gate",
+            "access": "read",
+            "note": "Wants read: needs read. Record-level access is none: denied."
+          }
+        ]
+      }
+    },
+    {
+      "name": "permission set opens the CRUD gate: profile without Read, permission set with Read, OWD Public Read Only",
+      "ruleSetId": "sharing@summer-26",
+      "input": {
+        "object": {
+          "owd": "PublicReadOnly",
+          "custom": false,
+          "grantAccessUsingHierarchies": true
+        },
+        "roles": [],
+        "users": [
+          {
+            "id": "owner",
+            "profile": {
+              "read": true,
+              "edit": true,
+              "delete": true,
+              "viewAll": false,
+              "modifyAll": false,
+              "viewAllData": false,
+              "modifyAllData": false
+            },
+            "permissionSets": []
+          },
+          {
+            "id": "analyst",
+            "profile": {
+              "read": false,
+              "edit": false,
+              "delete": false,
+              "viewAll": false,
+              "modifyAll": false,
+              "viewAllData": false,
+              "modifyAllData": false
+            },
+            "permissionSets": [
+              {
+                "id": "ps-account-reader",
+                "perms": {
+                  "read": true,
+                  "edit": false,
+                  "delete": false,
+                  "viewAll": false,
+                  "modifyAll": false,
+                  "viewAllData": false,
+                  "modifyAllData": false
+                }
+              }
+            ]
+          }
+        ],
+        "record": {
+          "id": "acc-1",
+          "ownerId": "owner",
+          "fields": {}
+        },
+        "sharingRules": [],
+        "manualShares": [],
+        "question": {
+          "userId": "analyst",
+          "wants": "read"
+        }
+      },
+      "expected": {
+        "access": "read",
+        "granted": true,
+        "trace": [
+          {
+            "rule": "object_permissions",
+            "effect": "gate",
+            "access": "read",
+            "note": "Read: permission set 'ps-account-reader'; Edit: not granted; Delete: not granted. Object permissions cap record-level access at read."
+          },
+          {
+            "rule": "modify_all",
+            "effect": "none",
+            "note": "No Modify All Data or Modify All Records: sharing decides."
+          },
+          {
+            "rule": "view_all",
+            "effect": "none",
+            "note": "No View All Data or View All Records: sharing decides."
+          },
+          {
+            "rule": "owner",
+            "effect": "none",
+            "note": "Record is owned by 'owner', not 'analyst'."
+          },
+          {
+            "rule": "owd",
+            "effect": "grant",
+            "access": "read",
+            "note": "OWD Public Read Only: every internal user gets read as the baseline."
+          },
+          {
+            "rule": "role_hierarchy",
+            "effect": "none",
+            "note": "User 'analyst' has no role, so nothing reaches them through the hierarchy."
+          },
+          {
+            "rule": "manual_share",
+            "effect": "none",
+            "note": "No manual share for user 'analyst'."
+          },
+          {
+            "rule": "required_access",
+            "effect": "gate",
+            "access": "read",
+            "note": "Wants read: needs read. Record-level access is read: granted."
+          }
+        ]
+      }
+    },
+    {
+      "name": "no object Read anywhere: none, the trace stops at the gate even on Public Read/Write",
+      "ruleSetId": "sharing@summer-26",
+      "input": {
+        "object": {
+          "owd": "PublicReadWrite",
+          "custom": false,
+          "grantAccessUsingHierarchies": true
+        },
+        "roles": [],
+        "users": [
+          {
+            "id": "owner",
+            "profile": {
+              "read": true,
+              "edit": true,
+              "delete": true,
+              "viewAll": false,
+              "modifyAll": false,
+              "viewAllData": false,
+              "modifyAllData": false
+            },
+            "permissionSets": []
+          },
+          {
+            "id": "outsider",
+            "profile": {
+              "read": false,
+              "edit": false,
+              "delete": false,
+              "viewAll": false,
+              "modifyAll": false,
+              "viewAllData": false,
+              "modifyAllData": false
+            },
+            "permissionSets": []
+          }
+        ],
+        "record": {
+          "id": "acc-1",
+          "ownerId": "owner",
+          "fields": {}
+        },
+        "sharingRules": [],
+        "manualShares": [],
+        "question": {
+          "userId": "outsider",
+          "wants": "read"
+        }
+      },
+      "expected": {
+        "access": "none",
+        "granted": false,
+        "trace": [
+          {
+            "rule": "object_permissions",
+            "effect": "gate",
+            "access": "none",
+            "note": "No object Read on the profile or any permission set: the record is invisible whatever sharing says."
+          }
+        ]
+      }
+    },
+    {
+      "name": "manual share at edit cannot satisfy a delete request: delete needs full",
+      "ruleSetId": "sharing@summer-26",
+      "input": {
+        "object": {
+          "owd": "Private",
+          "custom": false,
+          "grantAccessUsingHierarchies": true
+        },
+        "roles": [],
+        "users": [
+          {
+            "id": "owner",
+            "profile": {
+              "read": true,
+              "edit": true,
+              "delete": true,
+              "viewAll": false,
+              "modifyAll": false,
+              "viewAllData": false,
+              "modifyAllData": false
+            },
+            "permissionSets": []
+          },
+          {
+            "id": "colleague",
+            "profile": {
+              "read": true,
+              "edit": true,
+              "delete": true,
+              "viewAll": false,
+              "modifyAll": false,
+              "viewAllData": false,
+              "modifyAllData": false
+            },
+            "permissionSets": []
+          }
+        ],
+        "record": {
+          "id": "opp-1",
+          "ownerId": "owner",
+          "fields": {
+            "StageName": "Prospecting"
+          }
+        },
+        "sharingRules": [],
+        "manualShares": [
+          {
+            "userId": "colleague",
+            "access": "edit"
+          }
+        ],
+        "question": {
+          "userId": "colleague",
+          "wants": "delete"
+        }
+      },
+      "expected": {
+        "access": "edit",
+        "granted": false,
+        "trace": [
+          {
+            "rule": "object_permissions",
+            "effect": "gate",
+            "access": "full",
+            "note": "Read: profile; Edit: profile; Delete: profile. Object permissions cap record-level access at full."
+          },
+          {
+            "rule": "modify_all",
+            "effect": "none",
+            "note": "No Modify All Data or Modify All Records: sharing decides."
+          },
+          {
+            "rule": "view_all",
+            "effect": "none",
+            "note": "No View All Data or View All Records: sharing decides."
+          },
+          {
+            "rule": "owner",
+            "effect": "none",
+            "note": "Record is owned by 'owner', not 'colleague'."
+          },
+          {
+            "rule": "owd",
+            "effect": "none",
+            "note": "OWD Private: no baseline; only ownership, the role hierarchy, sharing rules and shares open the record."
+          },
+          {
+            "rule": "role_hierarchy",
+            "effect": "none",
+            "note": "User 'colleague' has no role, so nothing reaches them through the hierarchy."
+          },
+          {
+            "rule": "manual_share",
+            "effect": "grant",
+            "access": "edit",
+            "note": "Manual share grants edit to user 'colleague'; manual shares never exceed edit."
+          },
+          {
+            "rule": "required_access",
+            "effect": "gate",
+            "access": "full",
+            "note": "Wants delete: needs full. Record-level access is edit: denied."
+          }
+        ]
+      }
+    },
+    {
+      "name": "the owner with the Delete object permission deletes a Private record",
+      "ruleSetId": "sharing@summer-26",
+      "input": {
+        "object": {
+          "owd": "Private",
+          "custom": false,
+          "grantAccessUsingHierarchies": true
+        },
+        "roles": [
+          {
+            "id": "rep"
+          }
+        ],
+        "users": [
+          {
+            "id": "owner",
+            "roleId": "rep",
+            "profile": {
+              "read": true,
+              "edit": true,
+              "delete": true,
+              "viewAll": false,
+              "modifyAll": false,
+              "viewAllData": false,
+              "modifyAllData": false
+            },
+            "permissionSets": []
+          }
+        ],
+        "record": {
+          "id": "opp-1",
+          "ownerId": "owner",
+          "fields": {}
+        },
+        "sharingRules": [],
+        "manualShares": [],
+        "question": {
+          "userId": "owner",
+          "wants": "delete"
+        }
+      },
+      "expected": {
+        "access": "full",
+        "granted": true,
+        "trace": [
+          {
+            "rule": "object_permissions",
+            "effect": "gate",
+            "access": "full",
+            "note": "Read: profile; Edit: profile; Delete: profile. Object permissions cap record-level access at full."
+          },
+          {
+            "rule": "modify_all",
+            "effect": "none",
+            "note": "No Modify All Data or Modify All Records: sharing decides."
+          },
+          {
+            "rule": "view_all",
+            "effect": "none",
+            "note": "No View All Data or View All Records: sharing decides."
+          },
+          {
+            "rule": "owner",
+            "effect": "grant",
+            "access": "full",
+            "note": "User 'owner' owns the record: owners get full access."
+          },
+          {
+            "rule": "owd",
+            "effect": "none",
+            "note": "OWD Private: no baseline; only ownership, the role hierarchy, sharing rules and shares open the record."
+          },
+          {
+            "rule": "role_hierarchy",
+            "effect": "none",
+            "note": "Role 'rep' is not above the owner's role 'rep': nothing from the hierarchy."
+          },
+          {
+            "rule": "manual_share",
+            "effect": "none",
+            "note": "No manual share for user 'owner'."
+          },
+          {
+            "rule": "required_access",
+            "effect": "gate",
+            "access": "full",
+            "note": "Wants delete: needs full. Record-level access is full: granted."
+          }
+        ]
+      }
+    },
+    {
+      "name": "Modify All Data from a permission set gives full on a Private record to a non-owner",
+      "ruleSetId": "sharing@summer-26",
+      "input": {
+        "object": {
+          "owd": "Private",
+          "custom": false,
+          "grantAccessUsingHierarchies": true
+        },
+        "roles": [],
+        "users": [
+          {
+            "id": "owner",
+            "profile": {
+              "read": true,
+              "edit": true,
+              "delete": true,
+              "viewAll": false,
+              "modifyAll": false,
+              "viewAllData": false,
+              "modifyAllData": false
+            },
+            "permissionSets": []
+          },
+          {
+            "id": "integration",
+            "profile": {
+              "read": false,
+              "edit": false,
+              "delete": false,
+              "viewAll": false,
+              "modifyAll": false,
+              "viewAllData": false,
+              "modifyAllData": false
+            },
+            "permissionSets": [
+              {
+                "id": "ps-modify-all-data",
+                "perms": {
+                  "read": false,
+                  "edit": false,
+                  "delete": false,
+                  "viewAll": false,
+                  "modifyAll": false,
+                  "viewAllData": false,
+                  "modifyAllData": true
+                }
+              }
+            ]
+          }
+        ],
+        "record": {
+          "id": "acc-1",
+          "ownerId": "owner",
+          "fields": {}
+        },
+        "sharingRules": [],
+        "manualShares": [],
+        "question": {
+          "userId": "integration",
+          "wants": "edit"
+        }
+      },
+      "expected": {
+        "access": "full",
+        "granted": true,
+        "trace": [
+          {
+            "rule": "object_permissions",
+            "effect": "gate",
+            "access": "full",
+            "note": "Read: permission set 'ps-modify-all-data'; Edit: permission set 'ps-modify-all-data'; Delete: permission set 'ps-modify-all-data'. Object permissions cap record-level access at full."
+          },
+          {
+            "rule": "modify_all",
+            "effect": "grant",
+            "access": "full",
+            "note": "Modify All Data via permission set 'ps-modify-all-data' overrides sharing: full access to every record in the org."
+          },
+          {
+            "rule": "view_all",
+            "effect": "none",
+            "note": "No View All Data or View All Records: sharing decides."
+          },
+          {
+            "rule": "owner",
+            "effect": "none",
+            "note": "Record is owned by 'owner', not 'integration'."
+          },
+          {
+            "rule": "owd",
+            "effect": "none",
+            "note": "OWD Private: no baseline; only ownership, the role hierarchy, sharing rules and shares open the record."
+          },
+          {
+            "rule": "role_hierarchy",
+            "effect": "none",
+            "note": "User 'integration' has no role, so nothing reaches them through the hierarchy."
+          },
+          {
+            "rule": "manual_share",
+            "effect": "none",
+            "note": "No manual share for user 'integration'."
+          },
+          {
+            "rule": "required_access",
+            "effect": "gate",
+            "access": "edit",
+            "note": "Wants edit: needs edit. Record-level access is full: granted."
+          }
+        ]
+      }
+    },
+    {
+      "name": "criteria-based rule shared with a role and its subordinates gives edit, but delete is still denied",
+      "ruleSetId": "sharing@summer-26",
+      "input": {
+        "object": {
+          "owd": "Private",
+          "custom": true,
+          "grantAccessUsingHierarchies": false
+        },
+        "roles": [
+          {
+            "id": "ceo"
+          },
+          {
+            "id": "vp",
+            "parentId": "ceo"
+          },
+          {
+            "id": "rep",
+            "parentId": "vp"
+          }
+        ],
+        "users": [
+          {
+            "id": "owner",
+            "roleId": "rep",
+            "profile": {
+              "read": true,
+              "edit": true,
+              "delete": true,
+              "viewAll": false,
+              "modifyAll": false,
+              "viewAllData": false,
+              "modifyAllData": false
+            },
+            "permissionSets": []
+          },
+          {
+            "id": "peer",
+            "roleId": "rep",
+            "profile": {
+              "read": true,
+              "edit": true,
+              "delete": true,
+              "viewAll": false,
+              "modifyAll": false,
+              "viewAllData": false,
+              "modifyAllData": false
+            },
+            "permissionSets": []
+          }
+        ],
+        "record": {
+          "id": "proj-1",
+          "ownerId": "owner",
+          "fields": {
+            "Region__c": "EMEA"
+          }
+        },
+        "sharingRules": [
+          {
+            "id": "emea-editors",
+            "kind": "criteria",
+            "match": {
+              "field": "Region__c",
+              "equals": "EMEA"
+            },
+            "shareWith": {
+              "roleId": "ceo",
+              "roleAndSubordinates": true
+            },
+            "access": "edit"
+          }
+        ],
+        "manualShares": [],
+        "question": {
+          "userId": "peer",
+          "wants": "delete"
+        }
+      },
+      "expected": {
+        "access": "edit",
+        "granted": false,
+        "trace": [
+          {
+            "rule": "object_permissions",
+            "effect": "gate",
+            "access": "full",
+            "note": "Read: profile; Edit: profile; Delete: profile. Object permissions cap record-level access at full."
+          },
+          {
+            "rule": "modify_all",
+            "effect": "none",
+            "note": "No Modify All Data or Modify All Records: sharing decides."
+          },
+          {
+            "rule": "view_all",
+            "effect": "none",
+            "note": "No View All Data or View All Records: sharing decides."
+          },
+          {
+            "rule": "owner",
+            "effect": "none",
+            "note": "Record is owned by 'owner', not 'peer'."
+          },
+          {
+            "rule": "owd",
+            "effect": "none",
+            "note": "OWD Private: no baseline; only ownership, the role hierarchy, sharing rules and shares open the record."
+          },
+          {
+            "rule": "role_hierarchy",
+            "effect": "none",
+            "note": "Grant Access Using Hierarchies is off for this custom object: roles above the owner get nothing from the hierarchy."
+          },
+          {
+            "rule": "sharing_rule:emea-editors",
+            "effect": "grant",
+            "access": "edit",
+            "note": "Matches the record and is shared with role 'ceo' and subordinates: grants edit."
+          },
+          {
+            "rule": "manual_share",
+            "effect": "none",
+            "note": "No manual share for user 'peer'."
+          },
+          {
+            "rule": "required_access",
+            "effect": "gate",
+            "access": "full",
+            "note": "Wants delete: needs full. Record-level access is edit: denied."
+          }
+        ]
+      }
+    },
+    {
+      "name": "Controlled by Parent defers to parentAccess: read on the parent does not allow editing the child",
+      "ruleSetId": "sharing@summer-26",
+      "input": {
+        "object": {
+          "owd": "ControlledByParent",
+          "custom": true,
+          "grantAccessUsingHierarchies": false
+        },
+        "roles": [],
+        "users": [
+          {
+            "id": "owner",
+            "profile": {
+              "read": true,
+              "edit": true,
+              "delete": true,
+              "viewAll": false,
+              "modifyAll": false,
+              "viewAllData": false,
+              "modifyAllData": false
+            },
+            "permissionSets": []
+          },
+          {
+            "id": "peer",
+            "profile": {
+              "read": true,
+              "edit": true,
+              "delete": true,
+              "viewAll": false,
+              "modifyAll": false,
+              "viewAllData": false,
+              "modifyAllData": false
+            },
+            "permissionSets": []
+          }
+        ],
+        "record": {
+          "id": "line-1",
+          "ownerId": "owner",
+          "fields": {},
+          "parentAccess": "read"
+        },
+        "sharingRules": [],
+        "manualShares": [],
+        "question": {
+          "userId": "peer",
+          "wants": "edit"
+        }
+      },
+      "expected": {
+        "access": "read",
+        "granted": false,
+        "trace": [
+          {
+            "rule": "object_permissions",
+            "effect": "gate",
+            "access": "full",
+            "note": "Read: profile; Edit: profile; Delete: profile. Object permissions cap record-level access at full."
+          },
+          {
+            "rule": "modify_all",
+            "effect": "none",
+            "note": "No Modify All Data or Modify All Records: sharing decides."
+          },
+          {
+            "rule": "view_all",
+            "effect": "none",
+            "note": "No View All Data or View All Records: sharing decides."
+          },
+          {
+            "rule": "owner",
+            "effect": "none",
+            "note": "Record is owned by 'owner', not 'peer'."
+          },
+          {
+            "rule": "owd",
+            "effect": "grant",
+            "access": "read",
+            "note": "OWD Controlled by Parent: the record inherits the user's read access on its parent."
+          },
+          {
+            "rule": "role_hierarchy",
+            "effect": "none",
+            "note": "Grant Access Using Hierarchies is off for this custom object: roles above the owner get nothing from the hierarchy."
+          },
+          {
+            "rule": "manual_share",
+            "effect": "none",
+            "note": "Not evaluated: detail records under Controlled by Parent cannot be shared manually."
+          },
+          {
+            "rule": "required_access",
+            "effect": "gate",
+            "access": "edit",
+            "note": "Wants edit: needs edit. Record-level access is read: denied."
+          }
+        ]
+      }
+    },
+    {
+      "name": "Public Read/Write cannot give edit to a read-only profile: object permissions win over sharing",
+      "ruleSetId": "sharing@summer-26",
+      "input": {
+        "object": {
+          "owd": "PublicReadWrite",
+          "custom": false,
+          "grantAccessUsingHierarchies": true
+        },
+        "roles": [],
+        "users": [
+          {
+            "id": "owner",
+            "profile": {
+              "read": true,
+              "edit": true,
+              "delete": true,
+              "viewAll": false,
+              "modifyAll": false,
+              "viewAllData": false,
+              "modifyAllData": false
+            },
+            "permissionSets": []
+          },
+          {
+            "id": "viewer",
+            "profile": {
+              "read": true,
+              "edit": false,
+              "delete": false,
+              "viewAll": false,
+              "modifyAll": false,
+              "viewAllData": false,
+              "modifyAllData": false
+            },
+            "permissionSets": []
+          }
+        ],
+        "record": {
+          "id": "acc-1",
+          "ownerId": "owner",
+          "fields": {}
+        },
+        "sharingRules": [],
+        "manualShares": [],
+        "question": {
+          "userId": "viewer",
+          "wants": "edit"
+        }
+      },
+      "expected": {
+        "access": "read",
+        "granted": false,
+        "trace": [
+          {
+            "rule": "object_permissions",
+            "effect": "gate",
+            "access": "read",
+            "note": "Read: profile; Edit: not granted; Delete: not granted. Object permissions cap record-level access at read."
+          },
+          {
+            "rule": "modify_all",
+            "effect": "none",
+            "note": "No Modify All Data or Modify All Records: sharing decides."
+          },
+          {
+            "rule": "view_all",
+            "effect": "none",
+            "note": "No View All Data or View All Records: sharing decides."
+          },
+          {
+            "rule": "owner",
+            "effect": "none",
+            "note": "Record is owned by 'owner', not 'viewer'."
+          },
+          {
+            "rule": "owd",
+            "effect": "grant",
+            "access": "edit",
+            "note": "OWD Public Read/Write: every internal user gets edit as the baseline."
+          },
+          {
+            "rule": "role_hierarchy",
+            "effect": "none",
+            "note": "User 'viewer' has no role, so nothing reaches them through the hierarchy."
+          },
+          {
+            "rule": "manual_share",
+            "effect": "none",
+            "note": "No manual share for user 'viewer'."
+          },
+          {
+            "rule": "required_access",
+            "effect": "gate",
+            "access": "edit",
+            "note": "Wants edit: needs edit. Record-level access is edit, capped at read by object permissions: denied."
+          }
+        ]
+      }
+    },
+    {
+      "name": "owner-based rule: records owned by the rep role are shared read-only with the VP role on a custom object with hierarchy off",
+      "ruleSetId": "sharing@summer-26",
+      "input": {
+        "object": {
+          "owd": "Private",
+          "custom": true,
+          "grantAccessUsingHierarchies": false
+        },
+        "roles": [
+          {
+            "id": "ceo"
+          },
+          {
+            "id": "vp",
+            "parentId": "ceo"
+          },
+          {
+            "id": "rep",
+            "parentId": "vp"
+          }
+        ],
+        "users": [
+          {
+            "id": "owner",
+            "roleId": "rep",
+            "profile": {
+              "read": true,
+              "edit": true,
+              "delete": true,
+              "viewAll": false,
+              "modifyAll": false,
+              "viewAllData": false,
+              "modifyAllData": false
+            },
+            "permissionSets": []
+          },
+          {
+            "id": "manager",
+            "roleId": "vp",
+            "profile": {
+              "read": true,
+              "edit": true,
+              "delete": true,
+              "viewAll": false,
+              "modifyAll": false,
+              "viewAllData": false,
+              "modifyAllData": false
+            },
+            "permissionSets": []
+          }
+        ],
+        "record": {
+          "id": "proj-1",
+          "ownerId": "owner",
+          "fields": {}
+        },
+        "sharingRules": [
+          {
+            "id": "rep-records-to-vp",
+            "kind": "owner",
+            "match": {
+              "ownerRoleId": "rep"
+            },
+            "shareWith": {
+              "roleId": "vp"
+            },
+            "access": "read"
+          }
+        ],
+        "manualShares": [],
+        "question": {
+          "userId": "manager",
+          "wants": "read"
+        }
+      },
+      "expected": {
+        "access": "read",
+        "granted": true,
+        "trace": [
+          {
+            "rule": "object_permissions",
+            "effect": "gate",
+            "access": "full",
+            "note": "Read: profile; Edit: profile; Delete: profile. Object permissions cap record-level access at full."
+          },
+          {
+            "rule": "modify_all",
+            "effect": "none",
+            "note": "No Modify All Data or Modify All Records: sharing decides."
+          },
+          {
+            "rule": "view_all",
+            "effect": "none",
+            "note": "No View All Data or View All Records: sharing decides."
+          },
+          {
+            "rule": "owner",
+            "effect": "none",
+            "note": "Record is owned by 'owner', not 'manager'."
+          },
+          {
+            "rule": "owd",
+            "effect": "none",
+            "note": "OWD Private: no baseline; only ownership, the role hierarchy, sharing rules and shares open the record."
+          },
+          {
+            "rule": "role_hierarchy",
+            "effect": "none",
+            "note": "Grant Access Using Hierarchies is off for this custom object: roles above the owner get nothing from the hierarchy."
+          },
+          {
+            "rule": "sharing_rule:rep-records-to-vp",
+            "effect": "grant",
+            "access": "read",
+            "note": "Matches the record and is shared with role 'vp': grants read."
+          },
+          {
+            "rule": "manual_share",
+            "effect": "none",
+            "note": "No manual share for user 'manager'."
+          },
+          {
+            "rule": "required_access",
+            "effect": "gate",
+            "access": "read",
+            "note": "Wants read: needs read. Record-level access is read: granted."
+          }
+        ]
+      }
+    },
+    {
+      "name": "View All Records gives read but not edit on a Private record",
+      "ruleSetId": "sharing@summer-26",
+      "input": {
+        "object": {
+          "owd": "Private",
+          "custom": false,
+          "grantAccessUsingHierarchies": true
+        },
+        "roles": [],
+        "users": [
+          {
+            "id": "owner",
+            "profile": {
+              "read": true,
+              "edit": true,
+              "delete": true,
+              "viewAll": false,
+              "modifyAll": false,
+              "viewAllData": false,
+              "modifyAllData": false
+            },
+            "permissionSets": []
+          },
+          {
+            "id": "auditor",
+            "profile": {
+              "read": true,
+              "edit": true,
+              "delete": false,
+              "viewAll": true,
+              "modifyAll": false,
+              "viewAllData": false,
+              "modifyAllData": false
+            },
+            "permissionSets": []
+          }
+        ],
+        "record": {
+          "id": "acc-1",
+          "ownerId": "owner",
+          "fields": {}
+        },
+        "sharingRules": [],
+        "manualShares": [],
+        "question": {
+          "userId": "auditor",
+          "wants": "edit"
+        }
+      },
+      "expected": {
+        "access": "read",
+        "granted": false,
+        "trace": [
+          {
+            "rule": "object_permissions",
+            "effect": "gate",
+            "access": "edit",
+            "note": "Read: profile; Edit: profile; Delete: not granted. Object permissions cap record-level access at edit."
+          },
+          {
+            "rule": "modify_all",
+            "effect": "none",
+            "note": "No Modify All Data or Modify All Records: sharing decides."
+          },
+          {
+            "rule": "view_all",
+            "effect": "grant",
+            "access": "read",
+            "note": "View All Records on this object via profile overrides sharing: at least read on every record of the object."
+          },
+          {
+            "rule": "owner",
+            "effect": "none",
+            "note": "Record is owned by 'owner', not 'auditor'."
+          },
+          {
+            "rule": "owd",
+            "effect": "none",
+            "note": "OWD Private: no baseline; only ownership, the role hierarchy, sharing rules and shares open the record."
+          },
+          {
+            "rule": "role_hierarchy",
+            "effect": "none",
+            "note": "User 'auditor' has no role, so nothing reaches them through the hierarchy."
+          },
+          {
+            "rule": "manual_share",
+            "effect": "none",
+            "note": "No manual share for user 'auditor'."
+          },
+          {
+            "rule": "required_access",
+            "effect": "gate",
+            "access": "edit",
+            "note": "Wants edit: needs edit. Record-level access is read: denied."
+          }
+        ]
+      }
+    }
+  ]
+}

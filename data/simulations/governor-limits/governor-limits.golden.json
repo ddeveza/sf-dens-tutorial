@@ -1,0 +1,963 @@
+{
+  "$comment": "Golden cases for lib/simulations/governor-limits simulate(input, ruleSet): input -> expected result. Hand-reviewed; regenerate only with UPDATE_GOLDENS=1 npx vitest run data/simulations/governor-limits and review the diff.",
+  "cases": [
+    {
+      "name": "loop breach: one SOQL per record over 200 records breaks at query 101 (Winter '27, sync)",
+      "ruleSetId": "governor-limits@winter-27",
+      "input": {
+        "context": "sync",
+        "ops": [
+          {
+            "id": "soql-per-record",
+            "kind": "soqlQueries",
+            "amount": 1,
+            "loop": {
+              "iterations": 200
+            }
+          }
+        ]
+      },
+      "expected": {
+        "usage": {
+          "soqlQueries": {
+            "used": 101,
+            "limit": 100,
+            "pct": 101
+          },
+          "soqlRows": {
+            "used": 0,
+            "limit": 50000,
+            "pct": 0
+          },
+          "dmlStatements": {
+            "used": 0,
+            "limit": 150,
+            "pct": 0
+          },
+          "dmlRows": {
+            "used": 0,
+            "limit": 10000,
+            "pct": 0
+          },
+          "callouts": {
+            "used": 0,
+            "limit": 100,
+            "pct": 0
+          },
+          "cpuMs": {
+            "used": 0,
+            "limit": 10000,
+            "pct": 0
+          },
+          "heapBytes": {
+            "used": 0,
+            "limit": 10485760,
+            "pct": 0
+          },
+          "futureCalls": {
+            "used": 0,
+            "limit": 50,
+            "pct": 0
+          },
+          "queueableJobs": {
+            "used": 0,
+            "limit": 50,
+            "pct": 0
+          },
+          "emailInvocations": {
+            "used": 0,
+            "limit": 10,
+            "pct": 0
+          },
+          "soslQueries": {
+            "used": 0,
+            "limit": 20,
+            "pct": 0
+          }
+        },
+        "firstBreach": {
+          "opId": "soql-per-record",
+          "limit": "soqlQueries",
+          "atIteration": 101,
+          "message": "Too many SOQL queries: 101"
+        },
+        "executed": [],
+        "skipped": [],
+        "advice": [
+          "bulkify_soql"
+        ]
+      }
+    },
+    {
+      "name": "heap by release: a 9 MB string synchronously on Summer '26 (6 MB) breaks",
+      "ruleSetId": "governor-limits@summer-26",
+      "input": {
+        "context": "sync",
+        "ops": [
+          {
+            "id": "build-9mb-string",
+            "kind": "heapBytes",
+            "amount": 9437184
+          }
+        ]
+      },
+      "expected": {
+        "usage": {
+          "soqlQueries": {
+            "used": 0,
+            "limit": 100,
+            "pct": 0
+          },
+          "soqlRows": {
+            "used": 0,
+            "limit": 50000,
+            "pct": 0
+          },
+          "dmlStatements": {
+            "used": 0,
+            "limit": 150,
+            "pct": 0
+          },
+          "dmlRows": {
+            "used": 0,
+            "limit": 10000,
+            "pct": 0
+          },
+          "callouts": {
+            "used": 0,
+            "limit": 100,
+            "pct": 0
+          },
+          "cpuMs": {
+            "used": 0,
+            "limit": 10000,
+            "pct": 0
+          },
+          "heapBytes": {
+            "used": 9437184,
+            "limit": 6291456,
+            "pct": 150
+          },
+          "futureCalls": {
+            "used": 0,
+            "limit": 50,
+            "pct": 0
+          },
+          "queueableJobs": {
+            "used": 0,
+            "limit": 50,
+            "pct": 0
+          },
+          "emailInvocations": {
+            "used": 0,
+            "limit": 10,
+            "pct": 0
+          },
+          "soslQueries": {
+            "used": 0,
+            "limit": 20,
+            "pct": 0
+          }
+        },
+        "firstBreach": {
+          "opId": "build-9mb-string",
+          "limit": "heapBytes",
+          "atIteration": 1,
+          "message": "Apex heap size too large: 9437184"
+        },
+        "executed": [],
+        "skipped": [],
+        "advice": [
+          "reduce_heap",
+          "use_batch"
+        ]
+      }
+    },
+    {
+      "name": "heap by release: the same 9 MB string synchronously on Winter '27 (10 MB) finishes",
+      "ruleSetId": "governor-limits@winter-27",
+      "input": {
+        "context": "sync",
+        "ops": [
+          {
+            "id": "build-9mb-string",
+            "kind": "heapBytes",
+            "amount": 9437184
+          }
+        ]
+      },
+      "expected": {
+        "usage": {
+          "soqlQueries": {
+            "used": 0,
+            "limit": 100,
+            "pct": 0
+          },
+          "soqlRows": {
+            "used": 0,
+            "limit": 50000,
+            "pct": 0
+          },
+          "dmlStatements": {
+            "used": 0,
+            "limit": 150,
+            "pct": 0
+          },
+          "dmlRows": {
+            "used": 0,
+            "limit": 10000,
+            "pct": 0
+          },
+          "callouts": {
+            "used": 0,
+            "limit": 100,
+            "pct": 0
+          },
+          "cpuMs": {
+            "used": 0,
+            "limit": 10000,
+            "pct": 0
+          },
+          "heapBytes": {
+            "used": 9437184,
+            "limit": 10485760,
+            "pct": 90
+          },
+          "futureCalls": {
+            "used": 0,
+            "limit": 50,
+            "pct": 0
+          },
+          "queueableJobs": {
+            "used": 0,
+            "limit": 50,
+            "pct": 0
+          },
+          "emailInvocations": {
+            "used": 0,
+            "limit": 10,
+            "pct": 0
+          },
+          "soslQueries": {
+            "used": 0,
+            "limit": 20,
+            "pct": 0
+          }
+        },
+        "executed": [
+          "build-9mb-string"
+        ],
+        "skipped": [],
+        "advice": []
+      }
+    },
+    {
+      "name": "heap by context: a Queueable building the 9 MB string on Summer '26 (12 MB async) finishes",
+      "ruleSetId": "governor-limits@summer-26",
+      "input": {
+        "context": "queueable",
+        "ops": [
+          {
+            "id": "build-9mb-string",
+            "kind": "heapBytes",
+            "amount": 9437184
+          }
+        ]
+      },
+      "expected": {
+        "usage": {
+          "soqlQueries": {
+            "used": 0,
+            "limit": 200,
+            "pct": 0
+          },
+          "soqlRows": {
+            "used": 0,
+            "limit": 50000,
+            "pct": 0
+          },
+          "dmlStatements": {
+            "used": 0,
+            "limit": 150,
+            "pct": 0
+          },
+          "dmlRows": {
+            "used": 0,
+            "limit": 10000,
+            "pct": 0
+          },
+          "callouts": {
+            "used": 0,
+            "limit": 100,
+            "pct": 0
+          },
+          "cpuMs": {
+            "used": 0,
+            "limit": 60000,
+            "pct": 0
+          },
+          "heapBytes": {
+            "used": 9437184,
+            "limit": 12582912,
+            "pct": 75
+          },
+          "futureCalls": {
+            "used": 0,
+            "limit": 1,
+            "pct": 0
+          },
+          "queueableJobs": {
+            "used": 0,
+            "limit": 1,
+            "pct": 0
+          },
+          "emailInvocations": {
+            "used": 0,
+            "limit": 10,
+            "pct": 0
+          },
+          "soslQueries": {
+            "used": 0,
+            "limit": 20,
+            "pct": 0
+          }
+        },
+        "executed": [
+          "build-9mb-string"
+        ],
+        "skipped": [],
+        "advice": []
+      }
+    },
+    {
+      "name": "async vs sync: 150 SOQL queries inside a future method fit under the 200 async limit (Summer '26)",
+      "ruleSetId": "governor-limits@summer-26",
+      "input": {
+        "context": "future",
+        "ops": [
+          {
+            "id": "soql-per-record",
+            "kind": "soqlQueries",
+            "amount": 1,
+            "loop": {
+              "iterations": 150
+            }
+          }
+        ]
+      },
+      "expected": {
+        "usage": {
+          "soqlQueries": {
+            "used": 150,
+            "limit": 200,
+            "pct": 75
+          },
+          "soqlRows": {
+            "used": 0,
+            "limit": 50000,
+            "pct": 0
+          },
+          "dmlStatements": {
+            "used": 0,
+            "limit": 150,
+            "pct": 0
+          },
+          "dmlRows": {
+            "used": 0,
+            "limit": 10000,
+            "pct": 0
+          },
+          "callouts": {
+            "used": 0,
+            "limit": 100,
+            "pct": 0
+          },
+          "cpuMs": {
+            "used": 0,
+            "limit": 60000,
+            "pct": 0
+          },
+          "heapBytes": {
+            "used": 0,
+            "limit": 12582912,
+            "pct": 0
+          },
+          "futureCalls": {
+            "used": 0,
+            "limit": 0,
+            "pct": 0
+          },
+          "queueableJobs": {
+            "used": 0,
+            "limit": 1,
+            "pct": 0
+          },
+          "emailInvocations": {
+            "used": 0,
+            "limit": 10,
+            "pct": 0
+          },
+          "soslQueries": {
+            "used": 0,
+            "limit": 20,
+            "pct": 0
+          }
+        },
+        "executed": [
+          "soql-per-record"
+        ],
+        "skipped": [],
+        "advice": []
+      }
+    },
+    {
+      "name": "async vs sync: the same 150 SOQL queries synchronously break at 101 (Summer '26)",
+      "ruleSetId": "governor-limits@summer-26",
+      "input": {
+        "context": "sync",
+        "ops": [
+          {
+            "id": "soql-per-record",
+            "kind": "soqlQueries",
+            "amount": 1,
+            "loop": {
+              "iterations": 150
+            }
+          }
+        ]
+      },
+      "expected": {
+        "usage": {
+          "soqlQueries": {
+            "used": 101,
+            "limit": 100,
+            "pct": 101
+          },
+          "soqlRows": {
+            "used": 0,
+            "limit": 50000,
+            "pct": 0
+          },
+          "dmlStatements": {
+            "used": 0,
+            "limit": 150,
+            "pct": 0
+          },
+          "dmlRows": {
+            "used": 0,
+            "limit": 10000,
+            "pct": 0
+          },
+          "callouts": {
+            "used": 0,
+            "limit": 100,
+            "pct": 0
+          },
+          "cpuMs": {
+            "used": 0,
+            "limit": 10000,
+            "pct": 0
+          },
+          "heapBytes": {
+            "used": 0,
+            "limit": 6291456,
+            "pct": 0
+          },
+          "futureCalls": {
+            "used": 0,
+            "limit": 50,
+            "pct": 0
+          },
+          "queueableJobs": {
+            "used": 0,
+            "limit": 50,
+            "pct": 0
+          },
+          "emailInvocations": {
+            "used": 0,
+            "limit": 10,
+            "pct": 0
+          },
+          "soslQueries": {
+            "used": 0,
+            "limit": 20,
+            "pct": 0
+          }
+        },
+        "firstBreach": {
+          "opId": "soql-per-record",
+          "limit": "soqlQueries",
+          "atIteration": 101,
+          "message": "Too many SOQL queries: 101"
+        },
+        "executed": [],
+        "skipped": [],
+        "advice": [
+          "bulkify_soql"
+        ]
+      }
+    },
+    {
+      "name": "zero limit: a future call from a batch execute() breaks on the first call (Summer '26)",
+      "ruleSetId": "governor-limits@summer-26",
+      "input": {
+        "context": "batch",
+        "ops": [
+          {
+            "id": "fan-out-future",
+            "kind": "futureCalls",
+            "amount": 1
+          }
+        ]
+      },
+      "expected": {
+        "usage": {
+          "soqlQueries": {
+            "used": 0,
+            "limit": 200,
+            "pct": 0
+          },
+          "soqlRows": {
+            "used": 0,
+            "limit": 50000,
+            "pct": 0
+          },
+          "dmlStatements": {
+            "used": 0,
+            "limit": 150,
+            "pct": 0
+          },
+          "dmlRows": {
+            "used": 0,
+            "limit": 10000,
+            "pct": 0
+          },
+          "callouts": {
+            "used": 0,
+            "limit": 100,
+            "pct": 0
+          },
+          "cpuMs": {
+            "used": 0,
+            "limit": 60000,
+            "pct": 0
+          },
+          "heapBytes": {
+            "used": 0,
+            "limit": 12582912,
+            "pct": 0
+          },
+          "futureCalls": {
+            "used": 1,
+            "limit": 0,
+            "pct": 100
+          },
+          "queueableJobs": {
+            "used": 0,
+            "limit": 1,
+            "pct": 0
+          },
+          "emailInvocations": {
+            "used": 0,
+            "limit": 10,
+            "pct": 0
+          },
+          "soslQueries": {
+            "used": 0,
+            "limit": 20,
+            "pct": 0
+          }
+        },
+        "firstBreach": {
+          "opId": "fan-out-future",
+          "limit": "futureCalls",
+          "atIteration": 1,
+          "message": "Too many future calls: 1"
+        },
+        "executed": [],
+        "skipped": [],
+        "advice": [
+          "use_batch"
+        ]
+      }
+    },
+    {
+      "name": "no breach: a bulkified trigger on a 200-record chunk (Winter '27, sync)",
+      "ruleSetId": "governor-limits@winter-27",
+      "input": {
+        "context": "sync",
+        "ops": [
+          {
+            "id": "query-parents",
+            "kind": "soqlQueries",
+            "amount": 1
+          },
+          {
+            "id": "parent-rows",
+            "kind": "soqlRows",
+            "amount": 200
+          },
+          {
+            "id": "update-children",
+            "kind": "dmlStatements",
+            "amount": 1
+          },
+          {
+            "id": "child-rows",
+            "kind": "dmlRows",
+            "amount": 200
+          }
+        ]
+      },
+      "expected": {
+        "usage": {
+          "soqlQueries": {
+            "used": 1,
+            "limit": 100,
+            "pct": 1
+          },
+          "soqlRows": {
+            "used": 200,
+            "limit": 50000,
+            "pct": 0
+          },
+          "dmlStatements": {
+            "used": 1,
+            "limit": 150,
+            "pct": 1
+          },
+          "dmlRows": {
+            "used": 200,
+            "limit": 10000,
+            "pct": 2
+          },
+          "callouts": {
+            "used": 0,
+            "limit": 100,
+            "pct": 0
+          },
+          "cpuMs": {
+            "used": 0,
+            "limit": 10000,
+            "pct": 0
+          },
+          "heapBytes": {
+            "used": 0,
+            "limit": 10485760,
+            "pct": 0
+          },
+          "futureCalls": {
+            "used": 0,
+            "limit": 50,
+            "pct": 0
+          },
+          "queueableJobs": {
+            "used": 0,
+            "limit": 50,
+            "pct": 0
+          },
+          "emailInvocations": {
+            "used": 0,
+            "limit": 10,
+            "pct": 0
+          },
+          "soslQueries": {
+            "used": 0,
+            "limit": 20,
+            "pct": 0
+          }
+        },
+        "executed": [
+          "query-parents",
+          "parent-rows",
+          "update-children",
+          "child-rows"
+        ],
+        "skipped": [],
+        "advice": []
+      }
+    },
+    {
+      "name": "shared pool: two triggers in one transaction add up; the second one breaks at its 41st query and the DML after it never runs (Winter '27, sync)",
+      "ruleSetId": "governor-limits@winter-27",
+      "input": {
+        "context": "sync",
+        "ops": [
+          {
+            "id": "account-trigger",
+            "kind": "soqlQueries",
+            "amount": 1,
+            "loop": {
+              "iterations": 60
+            }
+          },
+          {
+            "id": "contact-trigger",
+            "kind": "soqlQueries",
+            "amount": 1,
+            "loop": {
+              "iterations": 50
+            }
+          },
+          {
+            "id": "final-update",
+            "kind": "dmlStatements",
+            "amount": 1
+          }
+        ]
+      },
+      "expected": {
+        "usage": {
+          "soqlQueries": {
+            "used": 101,
+            "limit": 100,
+            "pct": 101
+          },
+          "soqlRows": {
+            "used": 0,
+            "limit": 50000,
+            "pct": 0
+          },
+          "dmlStatements": {
+            "used": 0,
+            "limit": 150,
+            "pct": 0
+          },
+          "dmlRows": {
+            "used": 0,
+            "limit": 10000,
+            "pct": 0
+          },
+          "callouts": {
+            "used": 0,
+            "limit": 100,
+            "pct": 0
+          },
+          "cpuMs": {
+            "used": 0,
+            "limit": 10000,
+            "pct": 0
+          },
+          "heapBytes": {
+            "used": 0,
+            "limit": 10485760,
+            "pct": 0
+          },
+          "futureCalls": {
+            "used": 0,
+            "limit": 50,
+            "pct": 0
+          },
+          "queueableJobs": {
+            "used": 0,
+            "limit": 50,
+            "pct": 0
+          },
+          "emailInvocations": {
+            "used": 0,
+            "limit": 10,
+            "pct": 0
+          },
+          "soslQueries": {
+            "used": 0,
+            "limit": 20,
+            "pct": 0
+          }
+        },
+        "firstBreach": {
+          "opId": "contact-trigger",
+          "limit": "soqlQueries",
+          "atIteration": 41,
+          "message": "Too many SOQL queries: 101"
+        },
+        "executed": [
+          "account-trigger"
+        ],
+        "skipped": [
+          "final-update"
+        ],
+        "advice": [
+          "bulkify_soql"
+        ]
+      }
+    },
+    {
+      "name": "callouts in a loop synchronously break at 101 and should move async (Summer '26)",
+      "ruleSetId": "governor-limits@summer-26",
+      "input": {
+        "context": "sync",
+        "ops": [
+          {
+            "id": "callout-per-record",
+            "kind": "callouts",
+            "amount": 1,
+            "loop": {
+              "iterations": 200
+            }
+          }
+        ]
+      },
+      "expected": {
+        "usage": {
+          "soqlQueries": {
+            "used": 0,
+            "limit": 100,
+            "pct": 0
+          },
+          "soqlRows": {
+            "used": 0,
+            "limit": 50000,
+            "pct": 0
+          },
+          "dmlStatements": {
+            "used": 0,
+            "limit": 150,
+            "pct": 0
+          },
+          "dmlRows": {
+            "used": 0,
+            "limit": 10000,
+            "pct": 0
+          },
+          "callouts": {
+            "used": 101,
+            "limit": 100,
+            "pct": 101
+          },
+          "cpuMs": {
+            "used": 0,
+            "limit": 10000,
+            "pct": 0
+          },
+          "heapBytes": {
+            "used": 0,
+            "limit": 6291456,
+            "pct": 0
+          },
+          "futureCalls": {
+            "used": 0,
+            "limit": 50,
+            "pct": 0
+          },
+          "queueableJobs": {
+            "used": 0,
+            "limit": 50,
+            "pct": 0
+          },
+          "emailInvocations": {
+            "used": 0,
+            "limit": 10,
+            "pct": 0
+          },
+          "soslQueries": {
+            "used": 0,
+            "limit": 20,
+            "pct": 0
+          }
+        },
+        "firstBreach": {
+          "opId": "callout-per-record",
+          "limit": "callouts",
+          "atIteration": 101,
+          "message": "Too many callouts: 101"
+        },
+        "executed": [],
+        "skipped": [],
+        "advice": [
+          "move_callouts_async"
+        ]
+      }
+    },
+    {
+      "name": "DML rows: one insert of 10,001 rows breaks even though it is a single statement (Winter '27, sync)",
+      "ruleSetId": "governor-limits@winter-27",
+      "input": {
+        "context": "sync",
+        "ops": [
+          {
+            "id": "insert-statement",
+            "kind": "dmlStatements",
+            "amount": 1
+          },
+          {
+            "id": "insert-rows",
+            "kind": "dmlRows",
+            "amount": 10001
+          }
+        ]
+      },
+      "expected": {
+        "usage": {
+          "soqlQueries": {
+            "used": 0,
+            "limit": 100,
+            "pct": 0
+          },
+          "soqlRows": {
+            "used": 0,
+            "limit": 50000,
+            "pct": 0
+          },
+          "dmlStatements": {
+            "used": 1,
+            "limit": 150,
+            "pct": 1
+          },
+          "dmlRows": {
+            "used": 10001,
+            "limit": 10000,
+            "pct": 100
+          },
+          "callouts": {
+            "used": 0,
+            "limit": 100,
+            "pct": 0
+          },
+          "cpuMs": {
+            "used": 0,
+            "limit": 10000,
+            "pct": 0
+          },
+          "heapBytes": {
+            "used": 0,
+            "limit": 10485760,
+            "pct": 0
+          },
+          "futureCalls": {
+            "used": 0,
+            "limit": 50,
+            "pct": 0
+          },
+          "queueableJobs": {
+            "used": 0,
+            "limit": 50,
+            "pct": 0
+          },
+          "emailInvocations": {
+            "used": 0,
+            "limit": 10,
+            "pct": 0
+          },
+          "soslQueries": {
+            "used": 0,
+            "limit": 20,
+            "pct": 0
+          }
+        },
+        "firstBreach": {
+          "opId": "insert-rows",
+          "limit": "dmlRows",
+          "atIteration": 1,
+          "message": "Too many DML rows: 10001"
+        },
+        "executed": [
+          "insert-statement"
+        ],
+        "skipped": [],
+        "advice": [
+          "use_batch"
+        ]
+      }
+    }
+  ]
+}

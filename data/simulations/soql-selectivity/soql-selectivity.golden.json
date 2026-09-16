@@ -1,0 +1,523 @@
+{
+  "$comment": "Golden cases for lib/simulations/soql-selectivity simulate(input, ruleSet): input -> expected result. `rulesOverride` (optional) is merged onto the pinned rule set's rules. Hand-reviewed; regenerate only with UPDATE_GOLDENS=1 npx vitest run data/simulations/soql-selectivity and review the diff.",
+  "cases": [
+    {
+      "name": "Day 23 prediction: 5M rows, custom-indexed Status__c matching 400,000 (threshold 300,000) is a full scan",
+      "ruleSetId": "soql-selectivity@summer-26",
+      "input": {
+        "totalRows": 5000000,
+        "filters": [
+          {
+            "id": "status",
+            "field": "Status__c",
+            "operator": "eq",
+            "index": "custom",
+            "matchingRows": 400000,
+            "fieldKind": "picklist"
+          }
+        ],
+        "combinator": "AND"
+      },
+      "expected": {
+        "selective": false,
+        "plan": "fullScan",
+        "perFilter": [
+          {
+            "id": "status",
+            "usable": false,
+            "threshold": 300000,
+            "matchingRows": 400000,
+            "reason": "'Status__c' matches 400,000 of 5,000,000 rows, above the 300,000 threshold for a custom index: the optimizer will not use it."
+          }
+        ],
+        "suggestions": [
+          "add_selective_leading_filter",
+          "reduce_scope"
+        ]
+      }
+    },
+    {
+      "name": "OR-sum over threshold: two standard-index branches usable alone, union 350,000 > 300,000 on 1M rows",
+      "ruleSetId": "soql-selectivity@summer-26",
+      "input": {
+        "totalRows": 1000000,
+        "filters": [
+          {
+            "id": "email",
+            "field": "Email",
+            "operator": "eq",
+            "index": "standard",
+            "matchingRows": 200000,
+            "fieldKind": "text"
+          },
+          {
+            "id": "name",
+            "field": "Name",
+            "operator": "like",
+            "index": "standard",
+            "matchingRows": 150000,
+            "fieldKind": "text"
+          }
+        ],
+        "combinator": "OR"
+      },
+      "expected": {
+        "selective": false,
+        "plan": "fullScan",
+        "perFilter": [
+          {
+            "id": "email",
+            "usable": true,
+            "threshold": 300000,
+            "matchingRows": 200000,
+            "reason": "'Email' matches 200,000 of 1,000,000 rows, within the 300,000 threshold for a standard index. OR union: the branches together match 350,000 rows, above the 300,000 threshold, so the whole query falls back to a full scan."
+          },
+          {
+            "id": "name",
+            "usable": true,
+            "threshold": 300000,
+            "matchingRows": 150000,
+            "reason": "'Name' matches 150,000 of 1,000,000 rows, within the 300,000 threshold for a standard index. OR union: the branches together match 350,000 rows, above the 300,000 threshold, so the whole query falls back to a full scan."
+          }
+        ],
+        "suggestions": [
+          "reduce_scope"
+        ]
+      }
+    },
+    {
+      "name": "OR within threshold: 100,000 + 150,000 on 1M rows uses both indexes",
+      "ruleSetId": "soql-selectivity@summer-26",
+      "input": {
+        "totalRows": 1000000,
+        "filters": [
+          {
+            "id": "email",
+            "field": "Email",
+            "operator": "eq",
+            "index": "standard",
+            "matchingRows": 100000,
+            "fieldKind": "text"
+          },
+          {
+            "id": "name",
+            "field": "Name",
+            "operator": "like",
+            "index": "standard",
+            "matchingRows": 150000,
+            "fieldKind": "text"
+          }
+        ],
+        "combinator": "OR"
+      },
+      "expected": {
+        "selective": true,
+        "plan": "index",
+        "perFilter": [
+          {
+            "id": "email",
+            "usable": true,
+            "threshold": 300000,
+            "matchingRows": 100000,
+            "reason": "'Email' matches 100,000 of 1,000,000 rows, within the 300,000 threshold for a standard index."
+          },
+          {
+            "id": "name",
+            "usable": true,
+            "threshold": 300000,
+            "matchingRows": 150000,
+            "reason": "'Name' matches 150,000 of 1,000,000 rows, within the 300,000 threshold for a standard index."
+          }
+        ],
+        "suggestions": []
+      }
+    },
+    {
+      "name": "OR with an unindexed branch is a full scan even when the other branch is Id IN",
+      "ruleSetId": "soql-selectivity@summer-26",
+      "input": {
+        "totalRows": 1000000,
+        "filters": [
+          {
+            "id": "ids",
+            "field": "Id",
+            "operator": "in",
+            "index": "standard",
+            "matchingRows": 10,
+            "fieldKind": "lookup"
+          },
+          {
+            "id": "legacy",
+            "field": "Legacy_Key__c",
+            "operator": "eq",
+            "index": "none",
+            "matchingRows": 10,
+            "fieldKind": "text"
+          }
+        ],
+        "combinator": "OR"
+      },
+      "expected": {
+        "selective": false,
+        "plan": "fullScan",
+        "perFilter": [
+          {
+            "id": "ids",
+            "usable": true,
+            "threshold": 300000,
+            "matchingRows": 10,
+            "reason": "'Id' matches 10 of 1,000,000 rows, within the 300,000 threshold for a standard index. OR: every branch must be usable and 'Legacy_Key__c' is not, so the whole query falls back to a full scan."
+          },
+          {
+            "id": "legacy",
+            "usable": false,
+            "threshold": 0,
+            "matchingRows": 10,
+            "reason": "'Legacy_Key__c' has no index, so the optimizer cannot use it to drive the query; a custom index would allow up to 100,000 matching rows on 1,000,000 rows."
+          }
+        ],
+        "suggestions": [
+          "add_custom_index",
+          "add_selective_leading_filter"
+        ]
+      }
+    },
+    {
+      "name": "= null on a custom index is not selective while custom indexes exclude nulls (rule-set default)",
+      "ruleSetId": "soql-selectivity@summer-26",
+      "input": {
+        "totalRows": 1000000,
+        "filters": [
+          {
+            "id": "ext",
+            "field": "External_Id__c",
+            "operator": "isNull",
+            "index": "custom",
+            "matchingRows": 20000,
+            "fieldKind": "text"
+          }
+        ],
+        "combinator": "AND"
+      },
+      "expected": {
+        "selective": false,
+        "plan": "fullScan",
+        "perFilter": [
+          {
+            "id": "ext",
+            "usable": false,
+            "threshold": 100000,
+            "matchingRows": 20000,
+            "reason": "= null cannot use the custom index on 'External_Id__c': custom indexes exclude nulls unless Support creates one that includes them."
+          }
+        ],
+        "suggestions": [
+          "add_custom_index",
+          "add_selective_leading_filter"
+        ]
+      }
+    },
+    {
+      "name": "= null on a custom index built to include nulls (rulesOverride) is selective",
+      "ruleSetId": "soql-selectivity@summer-26",
+      "rulesOverride": {
+        "customIndexIncludesNulls": true
+      },
+      "input": {
+        "totalRows": 1000000,
+        "filters": [
+          {
+            "id": "ext",
+            "field": "External_Id__c",
+            "operator": "isNull",
+            "index": "custom",
+            "matchingRows": 20000,
+            "fieldKind": "text"
+          }
+        ],
+        "combinator": "AND"
+      },
+      "expected": {
+        "selective": true,
+        "plan": "index",
+        "perFilter": [
+          {
+            "id": "ext",
+            "usable": true,
+            "threshold": 100000,
+            "matchingRows": 20000,
+            "reason": "'External_Id__c' matches 20,000 of 1,000,000 rows, within the 100,000 threshold for a custom index (custom index includes nulls)."
+          }
+        ],
+        "suggestions": []
+      }
+    },
+    {
+      "name": "= null on a standard index: nulls are excluded from index tables",
+      "ruleSetId": "soql-selectivity@summer-26",
+      "input": {
+        "totalRows": 1000000,
+        "filters": [
+          {
+            "id": "email",
+            "field": "Email",
+            "operator": "isNull",
+            "index": "standard",
+            "matchingRows": 20000,
+            "fieldKind": "text"
+          }
+        ],
+        "combinator": "AND"
+      },
+      "expected": {
+        "selective": false,
+        "plan": "fullScan",
+        "perFilter": [
+          {
+            "id": "email",
+            "usable": false,
+            "threshold": 300000,
+            "matchingRows": 20000,
+            "reason": "= null cannot use the standard index on 'Email': nulls are excluded from standard index tables."
+          }
+        ],
+        "suggestions": [
+          "add_custom_index",
+          "add_selective_leading_filter"
+        ]
+      }
+    },
+    {
+      "name": "leading-wildcard LIKE on the standard-indexed Name field is never selective",
+      "ruleSetId": "soql-selectivity@summer-26",
+      "input": {
+        "totalRows": 1000000,
+        "filters": [
+          {
+            "id": "name",
+            "field": "Name",
+            "operator": "likeLeadingWildcard",
+            "index": "standard",
+            "matchingRows": 1000,
+            "fieldKind": "text"
+          }
+        ],
+        "combinator": "AND"
+      },
+      "expected": {
+        "selective": false,
+        "plan": "fullScan",
+        "perFilter": [
+          {
+            "id": "name",
+            "usable": false,
+            "threshold": 300000,
+            "matchingRows": 1000,
+            "reason": "Operator LIKE '%x' is never selective: the optimizer cannot use the standard index on 'Name'."
+          }
+        ],
+        "suggestions": [
+          "replace_negative_operator",
+          "add_selective_leading_filter"
+        ]
+      }
+    },
+    {
+      "name": "a formula field cannot be indexed, so it can never drive the query",
+      "ruleSetId": "soql-selectivity@summer-26",
+      "input": {
+        "totalRows": 2000000,
+        "filters": [
+          {
+            "id": "score",
+            "field": "Score__c",
+            "operator": "eq",
+            "index": "none",
+            "matchingRows": 100,
+            "fieldKind": "formula"
+          }
+        ],
+        "combinator": "AND"
+      },
+      "expected": {
+        "selective": false,
+        "plan": "fullScan",
+        "perFilter": [
+          {
+            "id": "score",
+            "usable": false,
+            "threshold": 0,
+            "matchingRows": 100,
+            "reason": "Formula fields are not indexable, so 'Score__c' can never drive the query."
+          }
+        ],
+        "suggestions": [
+          "add_selective_leading_filter",
+          "avoid_formula_filter"
+        ]
+      }
+    },
+    {
+      "name": "AND is selective when one filter is usable: != on Status__c plus = on Email",
+      "ruleSetId": "soql-selectivity@summer-26",
+      "input": {
+        "totalRows": 2000000,
+        "filters": [
+          {
+            "id": "status",
+            "field": "Status__c",
+            "operator": "neq",
+            "index": "custom",
+            "matchingRows": 900000,
+            "fieldKind": "picklist"
+          },
+          {
+            "id": "email",
+            "field": "Email",
+            "operator": "eq",
+            "index": "standard",
+            "matchingRows": 5000,
+            "fieldKind": "text"
+          }
+        ],
+        "combinator": "AND"
+      },
+      "expected": {
+        "selective": true,
+        "plan": "index",
+        "perFilter": [
+          {
+            "id": "status",
+            "usable": false,
+            "threshold": 150000,
+            "matchingRows": 900000,
+            "reason": "Operator != is never selective: the optimizer cannot use the custom index on 'Status__c'."
+          },
+          {
+            "id": "email",
+            "usable": true,
+            "threshold": 450000,
+            "matchingRows": 5000,
+            "reason": "'Email' matches 5,000 of 2,000,000 rows, within the 450,000 threshold for a standard index."
+          }
+        ],
+        "suggestions": []
+      }
+    },
+    {
+      "name": "10M rows: the custom-index cap of 333,000 still admits 330,000 matches",
+      "ruleSetId": "soql-selectivity@summer-26",
+      "input": {
+        "totalRows": 10000000,
+        "filters": [
+          {
+            "id": "ext",
+            "field": "External_Id__c",
+            "operator": "eq",
+            "index": "custom",
+            "matchingRows": 330000,
+            "fieldKind": "text"
+          }
+        ],
+        "combinator": "AND"
+      },
+      "expected": {
+        "selective": true,
+        "plan": "index",
+        "perFilter": [
+          {
+            "id": "ext",
+            "usable": true,
+            "threshold": 333000,
+            "matchingRows": 330000,
+            "reason": "'External_Id__c' matches 330,000 of 10,000,000 rows, within the 333,000 threshold for a custom index."
+          }
+        ],
+        "suggestions": []
+      }
+    },
+    {
+      "name": "AND with nothing usable: unindexed, leading wildcard, formula and an oversubscribed picklist together",
+      "ruleSetId": "soql-selectivity@summer-26",
+      "input": {
+        "totalRows": 1000000,
+        "filters": [
+          {
+            "id": "region",
+            "field": "Region__c",
+            "operator": "eq",
+            "index": "none",
+            "matchingRows": 10,
+            "fieldKind": "text"
+          },
+          {
+            "id": "name",
+            "field": "Name",
+            "operator": "likeLeadingWildcard",
+            "index": "standard",
+            "matchingRows": 10,
+            "fieldKind": "text"
+          },
+          {
+            "id": "score",
+            "field": "Score__c",
+            "operator": "eq",
+            "index": "none",
+            "matchingRows": 10,
+            "fieldKind": "formula"
+          },
+          {
+            "id": "status",
+            "field": "Status__c",
+            "operator": "eq",
+            "index": "custom",
+            "matchingRows": 500000,
+            "fieldKind": "picklist"
+          }
+        ],
+        "combinator": "AND"
+      },
+      "expected": {
+        "selective": false,
+        "plan": "fullScan",
+        "perFilter": [
+          {
+            "id": "region",
+            "usable": false,
+            "threshold": 0,
+            "matchingRows": 10,
+            "reason": "'Region__c' has no index, so the optimizer cannot use it to drive the query; a custom index would allow up to 100,000 matching rows on 1,000,000 rows."
+          },
+          {
+            "id": "name",
+            "usable": false,
+            "threshold": 300000,
+            "matchingRows": 10,
+            "reason": "Operator LIKE '%x' is never selective: the optimizer cannot use the standard index on 'Name'."
+          },
+          {
+            "id": "score",
+            "usable": false,
+            "threshold": 0,
+            "matchingRows": 10,
+            "reason": "Formula fields are not indexable, so 'Score__c' can never drive the query."
+          },
+          {
+            "id": "status",
+            "usable": false,
+            "threshold": 100000,
+            "matchingRows": 500000,
+            "reason": "'Status__c' matches 500,000 of 1,000,000 rows, above the 100,000 threshold for a custom index: the optimizer will not use it."
+          }
+        ],
+        "suggestions": [
+          "add_custom_index",
+          "replace_negative_operator",
+          "add_selective_leading_filter",
+          "avoid_formula_filter",
+          "reduce_scope"
+        ]
+      }
+    }
+  ]
+}

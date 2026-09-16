@@ -1,0 +1,443 @@
+{
+  "$comment": "Golden cases for lib/simulations/order-of-execution simulate(input, ruleSet): input -> expected result. Hand-reviewed; regenerate only with UPDATE_GOLDENS=1 npx vitest run data/simulations/order-of-execution and review the diff.",
+  "cases": [
+    {
+      "name": "insert with a before-save flow, before/after triggers, a validation rule and a workflow field update: triggers re-fire once, learner predicted it",
+      "ruleSetId": "order-of-execution@summer-26",
+      "input": {
+        "operation": "insert",
+        "configured": {
+          "beforeSaveFlow": true,
+          "beforeTrigger": true,
+          "customValidation": true,
+          "afterTrigger": true,
+          "workflowRules": true
+        },
+        "workflowDoesFieldUpdate": true,
+        "learnerOrder": [
+          "load",
+          "systemValidation",
+          "beforeSaveFlow",
+          "beforeTrigger",
+          "customValidation",
+          "saveNoCommit",
+          "afterTrigger",
+          "workflowRules",
+          "systemValidation",
+          "beforeTrigger",
+          "saveNoCommit",
+          "afterTrigger",
+          "commit",
+          "postCommit"
+        ]
+      },
+      "expected": {
+        "actualOrder": [
+          "load",
+          "systemValidation",
+          "beforeSaveFlow",
+          "beforeTrigger",
+          "customValidation",
+          "saveNoCommit",
+          "afterTrigger",
+          "workflowRules",
+          "systemValidation",
+          "beforeTrigger",
+          "saveNoCommit",
+          "afterTrigger",
+          "commit",
+          "postCommit"
+        ],
+        "reruns": [
+          {
+            "stage": "systemValidation",
+            "cause": "workflowFieldUpdate",
+            "iteration": 1
+          },
+          {
+            "stage": "beforeTrigger",
+            "cause": "workflowFieldUpdate",
+            "iteration": 1
+          },
+          {
+            "stage": "saveNoCommit",
+            "cause": "workflowFieldUpdate",
+            "iteration": 1
+          },
+          {
+            "stage": "afterTrigger",
+            "cause": "workflowFieldUpdate",
+            "iteration": 1
+          }
+        ],
+        "diff": [],
+        "score": 100
+      }
+    },
+    {
+      "name": "delete skips stages that do not apply (flows, validation, duplicate rules, workflow) and never re-fires; empty learner order scores 0",
+      "ruleSetId": "order-of-execution@summer-26",
+      "input": {
+        "operation": "delete",
+        "configured": {
+          "beforeSaveFlow": true,
+          "beforeTrigger": true,
+          "customValidation": true,
+          "duplicateRules": true,
+          "afterTrigger": true,
+          "workflowRules": true,
+          "afterSaveFlow": true,
+          "rollupSummary": true
+        },
+        "workflowDoesFieldUpdate": true,
+        "learnerOrder": []
+      },
+      "expected": {
+        "actualOrder": [
+          "load",
+          "beforeTrigger",
+          "saveNoCommit",
+          "afterTrigger",
+          "rollupSummary",
+          "commit",
+          "postCommit"
+        ],
+        "reruns": [],
+        "diff": [
+          {
+            "index": 0,
+            "expected": "load"
+          },
+          {
+            "index": 1,
+            "expected": "beforeTrigger"
+          },
+          {
+            "index": 2,
+            "expected": "saveNoCommit"
+          },
+          {
+            "index": 3,
+            "expected": "afterTrigger"
+          },
+          {
+            "index": 4,
+            "expected": "rollupSummary"
+          },
+          {
+            "index": 5,
+            "expected": "commit"
+          },
+          {
+            "index": 6,
+            "expected": "postCommit"
+          }
+        ],
+        "score": 0
+      }
+    },
+    {
+      "name": "learner order diff scoring: before trigger and validation rule swapped => two diff rows, LCS 7/8 => 88",
+      "ruleSetId": "order-of-execution@summer-26",
+      "input": {
+        "operation": "insert",
+        "configured": {
+          "beforeTrigger": true,
+          "customValidation": true,
+          "afterTrigger": true
+        },
+        "workflowDoesFieldUpdate": false,
+        "learnerOrder": [
+          "load",
+          "systemValidation",
+          "customValidation",
+          "beforeTrigger",
+          "saveNoCommit",
+          "afterTrigger",
+          "commit",
+          "postCommit"
+        ]
+      },
+      "expected": {
+        "actualOrder": [
+          "load",
+          "systemValidation",
+          "beforeTrigger",
+          "customValidation",
+          "saveNoCommit",
+          "afterTrigger",
+          "commit",
+          "postCommit"
+        ],
+        "reruns": [],
+        "diff": [
+          {
+            "index": 2,
+            "expected": "beforeTrigger",
+            "got": "customValidation"
+          },
+          {
+            "index": 3,
+            "expected": "customValidation",
+            "got": "beforeTrigger"
+          }
+        ],
+        "score": 88
+      }
+    },
+    {
+      "name": "update with a workflow rule that does no field update: no re-fire, after-save flow runs after workflow",
+      "ruleSetId": "order-of-execution@summer-26",
+      "input": {
+        "operation": "update",
+        "configured": {
+          "beforeTrigger": true,
+          "afterTrigger": true,
+          "workflowRules": true,
+          "afterSaveFlow": true
+        },
+        "workflowDoesFieldUpdate": false,
+        "learnerOrder": [
+          "load",
+          "systemValidation",
+          "beforeTrigger",
+          "saveNoCommit",
+          "afterTrigger",
+          "workflowRules",
+          "afterSaveFlow",
+          "commit",
+          "postCommit"
+        ]
+      },
+      "expected": {
+        "actualOrder": [
+          "load",
+          "systemValidation",
+          "beforeTrigger",
+          "saveNoCommit",
+          "afterTrigger",
+          "workflowRules",
+          "afterSaveFlow",
+          "commit",
+          "postCommit"
+        ],
+        "reruns": [],
+        "diff": [],
+        "score": 100
+      }
+    },
+    {
+      "name": "undelete: no before trigger, no validation, no sharing recalculation; after trigger and roll-ups only",
+      "ruleSetId": "order-of-execution@summer-26",
+      "input": {
+        "operation": "undelete",
+        "configured": {
+          "beforeTrigger": true,
+          "afterTrigger": true,
+          "customValidation": true,
+          "rollupSummary": true,
+          "grandparentRollup": true,
+          "criteriaSharing": true
+        },
+        "workflowDoesFieldUpdate": false,
+        "learnerOrder": [
+          "load",
+          "saveNoCommit",
+          "afterTrigger",
+          "rollupSummary",
+          "grandparentRollup",
+          "commit",
+          "postCommit"
+        ]
+      },
+      "expected": {
+        "actualOrder": [
+          "load",
+          "saveNoCommit",
+          "afterTrigger",
+          "rollupSummary",
+          "grandparentRollup",
+          "commit",
+          "postCommit"
+        ],
+        "reruns": [],
+        "diff": [],
+        "score": 100
+      }
+    },
+    {
+      "name": "insert with nothing configured is the structural skeleton: load, system validation, save, commit, post-commit",
+      "ruleSetId": "order-of-execution@summer-26",
+      "input": {
+        "operation": "insert",
+        "configured": {},
+        "workflowDoesFieldUpdate": false,
+        "learnerOrder": [
+          "load",
+          "systemValidation",
+          "saveNoCommit",
+          "commit",
+          "postCommit"
+        ]
+      },
+      "expected": {
+        "actualOrder": [
+          "load",
+          "systemValidation",
+          "saveNoCommit",
+          "commit",
+          "postCommit"
+        ],
+        "reruns": [],
+        "diff": [],
+        "score": 100
+      }
+    },
+    {
+      "name": "field-update flag without a workflow rule configured does not re-fire; a learner who predicted a re-fire has extra items => 7/9 => 78",
+      "ruleSetId": "order-of-execution@summer-26",
+      "input": {
+        "operation": "insert",
+        "configured": {
+          "beforeTrigger": true,
+          "afterTrigger": true
+        },
+        "workflowDoesFieldUpdate": true,
+        "learnerOrder": [
+          "load",
+          "systemValidation",
+          "beforeTrigger",
+          "saveNoCommit",
+          "afterTrigger",
+          "beforeTrigger",
+          "afterTrigger",
+          "commit",
+          "postCommit"
+        ]
+      },
+      "expected": {
+        "actualOrder": [
+          "load",
+          "systemValidation",
+          "beforeTrigger",
+          "saveNoCommit",
+          "afterTrigger",
+          "commit",
+          "postCommit"
+        ],
+        "reruns": [],
+        "diff": [
+          {
+            "index": 5,
+            "expected": "commit",
+            "got": "beforeTrigger"
+          },
+          {
+            "index": 6,
+            "expected": "postCommit",
+            "got": "afterTrigger"
+          }
+        ],
+        "score": 78
+      }
+    },
+    {
+      "name": "update with a workflow field update and a roll-up: learner missed the re-fire, keeps subsequence credit 9/13 => 69",
+      "ruleSetId": "order-of-execution@summer-26",
+      "input": {
+        "operation": "update",
+        "configured": {
+          "beforeTrigger": true,
+          "afterTrigger": true,
+          "workflowRules": true,
+          "rollupSummary": true
+        },
+        "workflowDoesFieldUpdate": true,
+        "learnerOrder": [
+          "load",
+          "systemValidation",
+          "beforeTrigger",
+          "saveNoCommit",
+          "afterTrigger",
+          "workflowRules",
+          "rollupSummary",
+          "commit",
+          "postCommit"
+        ]
+      },
+      "expected": {
+        "actualOrder": [
+          "load",
+          "systemValidation",
+          "beforeTrigger",
+          "saveNoCommit",
+          "afterTrigger",
+          "workflowRules",
+          "systemValidation",
+          "beforeTrigger",
+          "saveNoCommit",
+          "afterTrigger",
+          "rollupSummary",
+          "commit",
+          "postCommit"
+        ],
+        "reruns": [
+          {
+            "stage": "systemValidation",
+            "cause": "workflowFieldUpdate",
+            "iteration": 1
+          },
+          {
+            "stage": "beforeTrigger",
+            "cause": "workflowFieldUpdate",
+            "iteration": 1
+          },
+          {
+            "stage": "saveNoCommit",
+            "cause": "workflowFieldUpdate",
+            "iteration": 1
+          },
+          {
+            "stage": "afterTrigger",
+            "cause": "workflowFieldUpdate",
+            "iteration": 1
+          }
+        ],
+        "diff": [
+          {
+            "index": 6,
+            "expected": "systemValidation",
+            "got": "rollupSummary"
+          },
+          {
+            "index": 7,
+            "expected": "beforeTrigger",
+            "got": "commit"
+          },
+          {
+            "index": 8,
+            "expected": "saveNoCommit",
+            "got": "postCommit"
+          },
+          {
+            "index": 9,
+            "expected": "afterTrigger"
+          },
+          {
+            "index": 10,
+            "expected": "rollupSummary"
+          },
+          {
+            "index": 11,
+            "expected": "commit"
+          },
+          {
+            "index": 12,
+            "expected": "postCommit"
+          }
+        ],
+        "score": 69
+      }
+    }
+  ]
+}

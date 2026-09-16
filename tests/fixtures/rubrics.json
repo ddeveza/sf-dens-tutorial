@@ -1,0 +1,76 @@
+{
+  "$comment": "Shared boss/capstone rubric fixtures. lib/gamification/bosses.test.ts derives `defeated` with isDefeated() and supabase/tests/bosses.test.sql inserts the same rows and reads (llm_evaluation->>'defeated')::boolean; both must equal the `defeated` value here. Thresholds: mission overall >= 70 and every dimension >= 40; weekly overall >= 75 and every dimension >= 50; capstone overall >= 75 and at least 9 of 12 dimensions >= 60. `overall` inside each rubric is the rounded mean of its dimensions, as lib/llm stores it.",
+  "fixtures": [
+    {
+      "id": "mission",
+      "bossKind": "mission",
+      "bossRef": "w1-m1-basics",
+      "questionType": "boss",
+      "kind": "boss",
+      "rubric": {
+        "suspect": 80,
+        "why": 75,
+        "dataNeeded": 70,
+        "whatToInspect": 65,
+        "solution": 72,
+        "tradeOffs": 58,
+        "overall": 70,
+        "misconceptions": [],
+        "strengths": ["Named the trigger recursion as the suspect"],
+        "gaps": ["Did not weigh the async alternative"],
+        "feedback": "Solid diagnosis; the trade-off section was thin."
+      },
+      "defeated": true
+    },
+    {
+      "id": "weekly",
+      "bossKind": "weekly",
+      "bossRef": "weekly-w02",
+      "questionType": "boss",
+      "kind": "boss",
+      "rubric": {
+        "suspect": 90,
+        "why": 85,
+        "dataNeeded": 80,
+        "whatToInspect": 78,
+        "solution": 82,
+        "tradeOffs": 45,
+        "overall": 77,
+        "misconceptions": [{ "id": "async-is-free", "summary": "Treated Queueable as having no limits of its own" }],
+        "strengths": ["Correctly asked for the debug log with the limit usage lines"],
+        "gaps": ["No discussion of what the fix costs at 10M rows"],
+        "feedback": "Strong diagnosis, but the trade-off dimension fails the weekly bar."
+      },
+      "defeated": false
+    },
+    {
+      "id": "capstone",
+      "bossKind": "capstone",
+      "bossRef": "capstone",
+      "questionType": "capstone",
+      "kind": "capstone",
+      "rubric": {
+        "scores": {
+          "platformKnowledge": 88,
+          "dataArchitecture": 84,
+          "security": 62,
+          "apex": 79,
+          "automation": 71,
+          "integration": 80,
+          "scalability": 86,
+          "performance": 75,
+          "reliability": 66,
+          "observability": 52,
+          "tradeOffReasoning": 90,
+          "communication": 82
+        },
+        "overall": 76,
+        "misconceptions": [],
+        "strengths": ["Scalable data model with skew called out"],
+        "gaps": ["Observability plan is an afterthought"],
+        "feedback": "Passes on eleven of twelve dimensions."
+      },
+      "defeated": true
+    }
+  ]
+}
